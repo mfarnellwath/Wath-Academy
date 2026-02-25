@@ -3,13 +3,14 @@ let nodes = [];
 let sparkTimer = null;
 
 const palette = [
-  "#d9fff6",
-  "#ffd9f5",
-  "#ffe7bf",
-  "#c7f5ff",
-  "#e4ddff",
-  "#d6ffd9",
-  "#ffd6d6",
+  "#d7263d",
+  "#3a86ff",
+  "#ff7f11",
+  "#2a9d8f",
+  "#8338ec",
+  "#ff006e",
+  "#118ab2",
+  "#ef476f",
 ];
 
 const spinButton = document.getElementById("spinButton");
@@ -381,7 +382,7 @@ window.addEventListener("resize", () => {
 });
 
 refreshStageSize();
-createEmptyState("Loading names from Excel...");
+createEmptyState("Click 'Choose names.xls' to load your names file.");
+countdownText.textContent = "Choose names.xls to begin";
 requestAnimationFrame(animationLoop);
-loadNamesFromFolder();
 

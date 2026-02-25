@@ -90,8 +90,10 @@ body {
 }
 
 .name-node.is-candidate {
-  box-shadow: 0 0 0 3px rgba(129, 220, 255, 0.9), 0 0 18px rgba(116, 210, 255, 0.95);
-  transform: translate(-50%, -50%) scale(1.22);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.95), 0 0 20px rgba(255, 196, 0, 0.95);
+  transform: translate(-50%, -50%) scale(1.25);
+  background: #f5c400;
+  color: #2b1700;
   z-index: 12;
 }
 
