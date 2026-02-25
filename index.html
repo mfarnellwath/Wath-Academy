@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Countdown Wheel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hud">
+        <button id="spinButton" class="spin-button">Spin (15s)</button>
+        <p id="countdown" class="countdown">Ready</p>
+        <p id="winner" class="winner">Winner: --</p>
+      </header>
+
+      <section class="wheel-area">
+        <div class="pointer" aria-hidden="true"></div>
+        <canvas id="wheelCanvas" aria-label="Name spinner wheel"></canvas>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,86 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: radial-gradient(circle at top, #1a1f3e 0%, #040814 70%);
+  color: #fff;
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.hud {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.spin-button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffd056 0%, #f08a19 100%);
+  color: #111;
+  cursor: pointer;
+}
+
+.spin-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.countdown,
+.winner {
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.wheel-area {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+#wheelCanvas {
+  width: min(92vmin, calc(100vw - 2rem), calc(100vh - 9rem));
+  height: min(92vmin, calc(100vw - 2rem), calc(100vh - 9rem));
+  border-radius: 50%;
+  filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
+}
+
+.pointer {
+  position: absolute;
+  top: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 24px solid transparent;
+  border-right: 24px solid transparent;
+  border-top: 44px solid #fff;
+  z-index: 4;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
