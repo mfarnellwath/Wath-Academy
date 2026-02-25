@@ -20,14 +20,15 @@ const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
 
 const countdownSeconds = 15;
-const idleSpeed = 18;
-const juggleSpeed = 62;
+const idleSpeed = 30;
+const juggleSpeed = 105;
 
 let stageWidth = 0;
 let stageHeight = 0;
 let runningSelection = false;
 let mode = "idle";
 let lastFrame = performance.now();
+let candidateFlashTimer = null;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -40,7 +41,11 @@ function refreshStageSize() {
 }
 
 function clearWinnerHighlight() {
-  nodes.forEach((node) => node.element.classList.remove("is-winner"));
+  nodes.forEach((node) => {
+    node.element.classList.remove("is-winner");
+    node.element.classList.remove("is-candidate");
+    node.element.style.zIndex = "";
+  });
 }
 
 function clearSparks() {
@@ -126,6 +131,30 @@ function animationLoop(now) {
   requestAnimationFrame(animationLoop);
 }
 
+
+function stopCandidateFlashing() {
+  if (candidateFlashTimer) {
+    clearInterval(candidateFlashTimer);
+    candidateFlashTimer = null;
+  }
+  nodes.forEach((node) => node.element.classList.remove("is-candidate"));
+}
+
+function startCandidateFlashing() {
+  stopCandidateFlashing();
+  candidateFlashTimer = setInterval(() => {
+    if (nodes.length < 1) {
+      return;
+    }
+    nodes.forEach((node) => node.element.classList.remove("is-candidate"));
+    const picks = Math.max(1, Math.floor(nodes.length * 0.2));
+    for (let i = 0; i < picks; i += 1) {
+      const node = nodes[Math.floor(Math.random() * nodes.length)];
+      node.element.classList.add("is-candidate");
+    }
+  }, 85);
+}
+
 function spawnSparkBurst(winnerNode) {
   const sparks = 14;
   const baseX = winnerNode.x;
@@ -150,6 +179,7 @@ function chooseWinner() {
   const winnerIndex = Math.floor(Math.random() * nodes.length);
   const winnerNode = nodes[winnerIndex];
   clearWinnerHighlight();
+  stopCandidateFlashing();
   clearSparks();
   winnerNode.element.classList.add("is-winner");
   winnerNode.element.style.zIndex = "20";
@@ -172,12 +202,15 @@ function runSelection() {
   spinButton.disabled = true;
   winnerText.textContent = "Winner: --";
   clearWinnerHighlight();
+  stopCandidateFlashing();
   clearSparks();
 
   nodes.forEach((node) => {
     node.vx = (Math.random() - 0.5) * juggleSpeed;
     node.vy = (Math.random() - 0.5) * juggleSpeed;
   });
+
+  startCandidateFlashing();
 
   let timeLeft = countdownSeconds;
   countdownText.textContent = `Picking in ${timeLeft}s`;
