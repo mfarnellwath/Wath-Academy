@@ -40,9 +40,11 @@ const winnerText = document.getElementById("winner");
 
 const countdownSeconds = 15;
 const fullTurn = Math.PI * 2;
+const idleVelocity = 0.012;
+const activeVelocity = 0.28;
 
 let angle = 0;
-let velocity = 0;
+let velocity = idleVelocity;
 let spinning = false;
 let resizePending = false;
 
@@ -71,7 +73,7 @@ function applyNames() {
 
   names = parsedNames;
   winnerText.textContent = "Winner: --";
-  countdownText.textContent = "Ready";
+  countdownText.textContent = "Auto-spinning";
   drawWheel();
 }
 
@@ -152,7 +154,7 @@ function animationFrame() {
 }
 
 function runSpin() {
-  if (spinning) {
+  if (spinning || names.length < 2) {
     return;
   }
 
@@ -162,7 +164,7 @@ function runSpin() {
   namesInput.disabled = true;
   winnerText.textContent = "Winner: --";
 
-  velocity = 0.28;
+  velocity = activeVelocity;
   let timeLeft = countdownSeconds;
   countdownText.textContent = `Landing in ${timeLeft}s`;
 
@@ -209,7 +211,8 @@ function runSpin() {
         angle %= fullTurn;
         const winner = getWinnerFromAngle(angle);
         winnerText.textContent = `Winner: ${winner}`;
-        countdownText.textContent = "Ready";
+        countdownText.textContent = "Auto-spinning";
+        velocity = idleVelocity;
         spinButton.disabled = false;
         applyNamesButton.disabled = false;
         namesInput.disabled = false;
@@ -219,6 +222,56 @@ function runSpin() {
       requestAnimationFrame(decelerate);
     }
   }, 1000);
+}
+
+function extractNamesFromWorkbook(workbook) {
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    return [];
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+
+  return rows
+    .flat()
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+}
+
+async function tryLoadNamesFromExcel() {
+  if (typeof XLSX === "undefined") {
+    countdownText.textContent = "Excel parser not loaded; using typed/default names";
+    return;
+  }
+
+  const candidateFiles = ["names.xlsx", "names.xls"];
+
+  for (const fileName of candidateFiles) {
+    try {
+      const response = await fetch(fileName, { cache: "no-store" });
+      if (!response.ok) {
+        continue;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const excelNames = extractNamesFromWorkbook(workbook);
+
+      if (excelNames.length >= 2) {
+        names = excelNames;
+        setInputToCurrentNames();
+        countdownText.textContent = `Loaded ${excelNames.length} names from ${fileName}`;
+        drawWheel();
+        return;
+      }
+    } catch (error) {
+      // Continue trying the next candidate file.
+    }
+  }
+
+  setInputToCurrentNames();
+  countdownText.textContent = "Auto-spinning";
 }
 
 spinButton.addEventListener("click", runSpin);
@@ -231,3 +284,4 @@ window.addEventListener("resize", () => {
 setInputToCurrentNames();
 drawWheel();
 requestAnimationFrame(animationFrame);
+tryLoadNamesFromExcel();
