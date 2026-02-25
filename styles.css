@@ -89,6 +89,11 @@ body {
   transform: translate(-50%, -50%);
 }
 
+.name-node.is-ghost {
+  opacity: 0.45;
+  filter: saturate(0.8);
+}
+
 .name-node.is-candidate {
   box-shadow: 0 0 0 4px rgba(252, 178, 21, 0.95), 0 0 20px rgba(252, 178, 21, 0.9);
   transform: translate(-50%, -50%) scale(1.28);

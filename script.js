@@ -7,6 +7,17 @@ const holderStyles = [
   { background: "#fcb215", color: "#000000" },
 ];
 
+const ghostNames = [
+  "Wath",
+  "Academy",
+  "Ready",
+  "Picker",
+  "Select",
+  "Winner",
+  "Names",
+  "Live",
+];
+
 const spinButton = document.getElementById("spinButton");
 const chooseFileButton = document.getElementById("chooseFileButton");
 const fileInput = document.getElementById("fileInput");
@@ -51,12 +62,42 @@ function clearSparks() {
   }
 }
 
+function clearEmptyState() {
+  const existing = nameStage.querySelector(".empty-state");
+  if (existing) {
+    existing.remove();
+  }
+}
+
 function createEmptyState(message) {
-  nameStage.innerHTML = "";
+  clearEmptyState();
   const empty = document.createElement("div");
   empty.className = "empty-state";
   empty.textContent = message;
   nameStage.appendChild(empty);
+}
+
+function createGhostNodes() {
+  clearEmptyState();
+  nameStage.innerHTML = "";
+  nodes = ghostNames.map((name, index) => {
+    const el = document.createElement("div");
+    el.className = "name-node is-ghost";
+    el.textContent = name;
+    const style = holderStyles[index % holderStyles.length];
+    el.style.background = style.background;
+    el.style.color = style.color;
+    nameStage.appendChild(el);
+
+    const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
+    const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
+    const vx = (Math.random() - 0.5) * idleSpeed;
+    const vy = (Math.random() - 0.5) * idleSpeed;
+
+    return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: true };
+  });
+
+  applyNodePositions();
 }
 
 function createNodes() {
@@ -75,7 +116,7 @@ function createNodes() {
     const vx = (Math.random() - 0.5) * idleSpeed;
     const vy = (Math.random() - 0.5) * idleSpeed;
 
-    return { name, element: el, x, y, vx, vy, isWinner: false };
+    return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: false };
   });
 
   applyNodePositions();
@@ -268,6 +309,7 @@ function applyWorkbook(arrayBuffer, sourceLabel) {
 
   if (excelNames.length < 2) {
     countdownText.textContent = `${sourceLabel} needs at least 2 names`;
+    createGhostNodes();
     createEmptyState("Need at least 2 names in the sheet.");
     return false;
   }
@@ -275,6 +317,7 @@ function applyWorkbook(arrayBuffer, sourceLabel) {
   names = excelNames;
   refreshStageSize();
   createNodes();
+  clearEmptyState();
   countdownText.textContent = `Loaded ${excelNames.length} names from ${sourceLabel}`;
   spinButton.disabled = false;
   return true;
@@ -308,6 +351,7 @@ function tryXhrArrayBuffer(path) {
 async function loadNamesFromFolder() {
   if (typeof XLSX === "undefined") {
     countdownText.textContent = "Excel parser failed to load";
+    createGhostNodes();
     createEmptyState("XLSX library failed to load.");
     return;
   }
@@ -337,11 +381,13 @@ async function loadNamesFromFolder() {
 
   if (window.location.protocol === "file:") {
     countdownText.textContent = "File access blocked. Click 'Choose names.xls'.";
+    createGhostNodes();
     createEmptyState("Browser blocked file access. Use 'Choose names.xls'.");
     return;
   }
 
   countdownText.textContent = "No valid names.xls found";
+  createGhostNodes();
   createEmptyState("Could not find names.xls / names.xlsx in this folder.");
 }
 
@@ -355,6 +401,7 @@ async function loadNamesFromPicker(file) {
     applyWorkbook(arrayBuffer, file.name);
   } catch (error) {
     countdownText.textContent = "Could not read selected file";
+    createGhostNodes();
     createEmptyState("Selected file could not be read.");
   }
 }
@@ -371,10 +418,14 @@ window.addEventListener("resize", () => {
   refreshStageSize();
   if (names.length > 0) {
     createNodes();
+  } else {
+    createGhostNodes();
+    createEmptyState("Click 'Choose names.xls' to load your names file.");
   }
 });
 
 refreshStageSize();
+createGhostNodes();
 createEmptyState("Click 'Choose names.xls' to load your names file.");
 countdownText.textContent = "Choose names.xls to begin";
 requestAnimationFrame(animationLoop);
