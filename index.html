@@ -9,16 +9,10 @@
   <body>
     <main class="app">
       <header class="hud">
-        <button id="spinButton" class="spin-button">Start (15s)</button>
-        <button id="applyNamesButton" class="apply-button">Apply Names</button>
-        <p id="countdown" class="countdown">Auto-spinning</p>
+        <button id="spinButton" class="spin-button" disabled>Start (15s)</button>
+        <p id="countdown" class="countdown">Looking for names.xls...</p>
         <p id="winner" class="winner">Winner: --</p>
       </header>
-
-      <section class="names-panel">
-        <label for="namesInput" class="names-label">Put one name per line, or drop names.xlsx / names.xls in this folder:</label>
-        <textarea id="namesInput" class="names-input" spellcheck="false"></textarea>
-      </section>
 
       <section class="wheel-area">
         <div class="pointer" aria-hidden="true"></div>

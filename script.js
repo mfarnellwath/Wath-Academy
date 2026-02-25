@@ -1,19 +1,4 @@
-const defaultNames = [
-  "Ava",
-  "Noah",
-  "Mia",
-  "Liam",
-  "Ethan",
-  "Olivia",
-  "Sophia",
-  "Lucas",
-  "Emma",
-  "Mason",
-  "Amelia",
-  "James",
-];
-
-let names = [...defaultNames];
+let names = [];
 
 const colors = [
   "#ff595e",
@@ -33,8 +18,6 @@ const colors = [
 const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
-const applyNamesButton = document.getElementById("applyNamesButton");
-const namesInput = document.getElementById("namesInput");
 const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
 
@@ -48,40 +31,31 @@ let velocity = idleVelocity;
 let spinning = false;
 let resizePending = false;
 
-function getParsedNames(raw) {
-  return raw
-    .split(/\r?\n/)
-    .map((name) => name.trim())
-    .filter(Boolean);
-}
-
-function setInputToCurrentNames() {
-  namesInput.value = names.join("\n");
-}
-
-function applyNames() {
-  if (spinning) {
-    return;
-  }
-
-  const parsedNames = getParsedNames(namesInput.value);
-
-  if (parsedNames.length < 2) {
-    countdownText.textContent = "Please enter at least 2 names";
-    return;
-  }
-
-  names = parsedNames;
-  winnerText.textContent = "Winner: --";
-  countdownText.textContent = "Auto-spinning";
-  drawWheel();
-}
-
 function getWinnerFromAngle(currentAngle) {
   const sectorAngle = fullTurn / names.length;
   const normalized = ((-currentAngle + fullTurn / 4) % fullTurn + fullTurn) % fullTurn;
   const index = Math.floor(normalized / sectorAngle) % names.length;
   return names[index];
+}
+
+function drawEmptyWheel(size, center, radius) {
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, fullTurn);
+  ctx.fillStyle = "#1e2a52";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, fullTurn);
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = "#ffffff";
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${Math.max(radius * 0.08, 18)}px Segoe UI`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Drop names.xls in this folder", center, center - 12);
+  ctx.fillText("Then refresh page", center, center + 20);
 }
 
 function drawWheel() {
@@ -95,6 +69,12 @@ function drawWheel() {
 
   const center = size / 2;
   const radius = center - 8;
+
+  if (names.length < 2) {
+    drawEmptyWheel(size, center, radius);
+    return;
+  }
+
   const arc = fullTurn / names.length;
 
   ctx.save();
@@ -115,7 +95,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(start + arc / 2);
     ctx.fillStyle = "#111";
-    ctx.font = `${Math.max(radius * 0.08, 15)}px Segoe UI`;
+    ctx.font = `${Math.max(radius * 0.08, 14)}px Segoe UI`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(names[i], radius * 0.9, 0);
@@ -160,8 +140,6 @@ function runSpin() {
 
   spinning = true;
   spinButton.disabled = true;
-  applyNamesButton.disabled = true;
-  namesInput.disabled = true;
   winnerText.textContent = "Winner: --";
 
   velocity = activeVelocity;
@@ -214,8 +192,6 @@ function runSpin() {
         countdownText.textContent = "Auto-spinning";
         velocity = idleVelocity;
         spinButton.disabled = false;
-        applyNamesButton.disabled = false;
-        namesInput.disabled = false;
         spinning = false;
       }
 
@@ -239,49 +215,44 @@ function extractNamesFromWorkbook(workbook) {
     .filter(Boolean);
 }
 
-async function tryLoadNamesFromExcel() {
+async function loadNamesFromXls() {
   if (typeof XLSX === "undefined") {
-    countdownText.textContent = "Excel parser not loaded; using typed/default names";
+    countdownText.textContent = "Excel parser failed to load";
     return;
   }
 
-  const candidateFiles = ["names.xlsx", "names.xls"];
+  try {
+    const response = await fetch("names.xls", { cache: "no-store" });
 
-  for (const fileName of candidateFiles) {
-    try {
-      const response = await fetch(fileName, { cache: "no-store" });
-      if (!response.ok) {
-        continue;
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const excelNames = extractNamesFromWorkbook(workbook);
-
-      if (excelNames.length >= 2) {
-        names = excelNames;
-        setInputToCurrentNames();
-        countdownText.textContent = `Loaded ${excelNames.length} names from ${fileName}`;
-        drawWheel();
-        return;
-      }
-    } catch (error) {
-      // Continue trying the next candidate file.
+    if (!response.ok) {
+      countdownText.textContent = "names.xls not found";
+      return;
     }
-  }
 
-  setInputToCurrentNames();
-  countdownText.textContent = "Auto-spinning";
+    const arrayBuffer = await response.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const excelNames = extractNamesFromWorkbook(workbook);
+
+    if (excelNames.length < 2) {
+      countdownText.textContent = "names.xls needs at least 2 names";
+      return;
+    }
+
+    names = excelNames;
+    spinButton.disabled = false;
+    countdownText.textContent = `Loaded ${excelNames.length} names from names.xls`;
+    drawWheel();
+  } catch (error) {
+    countdownText.textContent = "Could not read names.xls";
+  }
 }
 
 spinButton.addEventListener("click", runSpin);
-applyNamesButton.addEventListener("click", applyNames);
 
 window.addEventListener("resize", () => {
   resizePending = true;
 });
 
-setInputToCurrentNames();
 drawWheel();
 requestAnimationFrame(animationFrame);
-tryLoadNamesFromExcel();
+loadNamesFromXls();
