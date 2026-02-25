@@ -20,8 +20,8 @@ const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
 
 const countdownSeconds = 15;
-const idleSpeed = 12;
-const juggleSpeed = 42;
+const idleSpeed = 18;
+const juggleSpeed = 62;
 
 let stageWidth = 0;
 let stageHeight = 0;
