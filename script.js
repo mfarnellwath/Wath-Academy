@@ -38,7 +38,7 @@ function getWinnerFromAngle(currentAngle) {
   return names[index];
 }
 
-function drawEmptyWheel(size, center, radius) {
+function drawEmptyWheel(center, radius) {
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, fullTurn);
   ctx.fillStyle = "#1e2a52";
@@ -51,11 +51,11 @@ function drawEmptyWheel(size, center, radius) {
   ctx.stroke();
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = `${Math.max(radius * 0.08, 18)}px Segoe UI`;
+  ctx.font = `${Math.max(radius * 0.075, 17)}px Segoe UI`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Drop names.xls in this folder", center, center - 12);
-  ctx.fillText("Then refresh page", center, center + 20);
+  ctx.fillText("Put names.xls beside index.html", center, center - 12);
+  ctx.fillText("(or run with a local web server)", center, center + 20);
 }
 
 function drawWheel() {
@@ -71,7 +71,7 @@ function drawWheel() {
   const radius = center - 8;
 
   if (names.length < 2) {
-    drawEmptyWheel(size, center, radius);
+    drawEmptyWheel(center, radius);
     return;
   }
 
@@ -215,36 +215,76 @@ function extractNamesFromWorkbook(workbook) {
     .filter(Boolean);
 }
 
+async function tryFetchArrayBuffer(path) {
+  const response = await fetch(path, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.arrayBuffer();
+}
+
+function tryXhrArrayBuffer(path) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", path, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 0) {
+        resolve(xhr.response);
+        return;
+      }
+      reject(new Error(`XHR ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error("XHR network error"));
+    xhr.send();
+  });
+}
+
 async function loadNamesFromXls() {
   if (typeof XLSX === "undefined") {
     countdownText.textContent = "Excel parser failed to load";
     return;
   }
 
-  try {
-    const response = await fetch("names.xls", { cache: "no-store" });
+  const candidates = ["names.xls", "names.xlsx", "Names.xls", "Names.xlsx"];
 
-    if (!response.ok) {
-      countdownText.textContent = "names.xls not found";
+  for (const candidate of candidates) {
+    try {
+      let arrayBuffer;
+      try {
+        arrayBuffer = await tryFetchArrayBuffer(candidate);
+      } catch (fetchError) {
+        if (window.location.protocol === "file:") {
+          arrayBuffer = await tryXhrArrayBuffer(candidate);
+        } else {
+          throw fetchError;
+        }
+      }
+
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const excelNames = extractNamesFromWorkbook(workbook);
+
+      if (excelNames.length < 2) {
+        continue;
+      }
+
+      names = excelNames;
+      spinButton.disabled = false;
+      countdownText.textContent = `Loaded ${excelNames.length} names from ${candidate}`;
+      drawWheel();
       return;
+    } catch (error) {
+      // Try the next candidate filename.
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
-    const excelNames = extractNamesFromWorkbook(workbook);
-
-    if (excelNames.length < 2) {
-      countdownText.textContent = "names.xls needs at least 2 names";
-      return;
-    }
-
-    names = excelNames;
-    spinButton.disabled = false;
-    countdownText.textContent = `Loaded ${excelNames.length} names from names.xls`;
-    drawWheel();
-  } catch (error) {
-    countdownText.textContent = "Could not read names.xls";
   }
+
+  if (window.location.protocol === "file:") {
+    countdownText.textContent =
+      "Could not read names.xls via file://. Run a local server in this folder.";
+    return;
+  }
+
+  countdownText.textContent = "No valid names.xls found (need at least 2 names)";
 }
 
 spinButton.addEventListener("click", runSpin);
