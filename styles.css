@@ -31,7 +31,8 @@ body {
   text-align: center;
 }
 
-.spin-button {
+.spin-button,
+.file-button {
   border: none;
   border-radius: 999px;
   padding: 0.85rem 1.45rem;
@@ -39,7 +40,14 @@ body {
   font-weight: 700;
   color: #111;
   cursor: pointer;
+}
+
+.spin-button {
   background: linear-gradient(135deg, #ffd056 0%, #f08a19 100%);
+}
+
+.file-button {
+  background: linear-gradient(135deg, #72f1b8 0%, #2cd9d9 100%);
 }
 
 .spin-button:disabled {

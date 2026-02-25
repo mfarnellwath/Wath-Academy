@@ -18,6 +18,8 @@ const colors = [
 const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
+const chooseFileButton = document.getElementById("chooseFileButton");
+const fileInput = document.getElementById("fileInput");
 const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
 
@@ -51,11 +53,11 @@ function drawEmptyWheel(center, radius) {
   ctx.stroke();
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = `${Math.max(radius * 0.075, 17)}px Segoe UI`;
+  ctx.font = `${Math.max(radius * 0.07, 16)}px Segoe UI`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("Put names.xls beside index.html", center, center - 12);
-  ctx.fillText("(or run with a local web server)", center, center + 20);
+  ctx.fillText("or click 'Choose names.xls'", center, center + 20);
 }
 
 function drawWheel() {
@@ -215,6 +217,22 @@ function extractNamesFromWorkbook(workbook) {
     .filter(Boolean);
 }
 
+function applyWorkbook(arrayBuffer, sourceLabel) {
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const excelNames = extractNamesFromWorkbook(workbook);
+
+  if (excelNames.length < 2) {
+    countdownText.textContent = `${sourceLabel} needs at least 2 names`;
+    return false;
+  }
+
+  names = excelNames;
+  spinButton.disabled = false;
+  countdownText.textContent = `Loaded ${excelNames.length} names from ${sourceLabel}`;
+  drawWheel();
+  return true;
+}
+
 async function tryFetchArrayBuffer(path) {
   const response = await fetch(path, { cache: "no-store" });
   if (!response.ok) {
@@ -240,7 +258,7 @@ function tryXhrArrayBuffer(path) {
   });
 }
 
-async function loadNamesFromXls() {
+async function loadNamesFromFolder() {
   if (typeof XLSX === "undefined") {
     countdownText.textContent = "Excel parser failed to load";
     return;
@@ -261,33 +279,45 @@ async function loadNamesFromXls() {
         }
       }
 
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const excelNames = extractNamesFromWorkbook(workbook);
-
-      if (excelNames.length < 2) {
-        continue;
+      if (applyWorkbook(arrayBuffer, candidate)) {
+        return;
       }
-
-      names = excelNames;
-      spinButton.disabled = false;
-      countdownText.textContent = `Loaded ${excelNames.length} names from ${candidate}`;
-      drawWheel();
-      return;
     } catch (error) {
-      // Try the next candidate filename.
+      // Try next candidate.
     }
   }
 
   if (window.location.protocol === "file:") {
     countdownText.textContent =
-      "Could not read names.xls via file://. Run a local server in this folder.";
+      "File:// blocked reading names.xls. Click 'Choose names.xls' to load manually.";
     return;
   }
 
   countdownText.textContent = "No valid names.xls found (need at least 2 names)";
 }
 
+async function loadNamesFromPicker(file) {
+  if (!file) {
+    return;
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    applyWorkbook(arrayBuffer, file.name);
+  } catch (error) {
+    countdownText.textContent = "Could not read selected file";
+  }
+}
+
 spinButton.addEventListener("click", runSpin);
+chooseFileButton.addEventListener("click", () => {
+  fileInput.click();
+});
+fileInput.addEventListener("change", (event) => {
+  const [file] = event.target.files;
+  loadNamesFromPicker(file);
+  fileInput.value = "";
+});
 
 window.addEventListener("resize", () => {
   resizePending = true;
@@ -295,4 +325,4 @@ window.addEventListener("resize", () => {
 
 drawWheel();
 requestAnimationFrame(animationFrame);
-loadNamesFromXls();
+loadNamesFromFolder();
