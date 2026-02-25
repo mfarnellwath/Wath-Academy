@@ -32,6 +32,7 @@ let angle = 0;
 let velocity = idleVelocity;
 let spinning = false;
 let resizePending = false;
+let wheelFontPx = 15;
 
 function getWinnerFromAngle(currentAngle) {
   const sectorAngle = fullTurn / names.length;
@@ -97,7 +98,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(start + arc / 2);
     ctx.fillStyle = "#111";
-    ctx.font = `${Math.max(radius * 0.08, 14)}px Segoe UI`;
+    ctx.font = `${wheelFontPx}px Segoe UI`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(names[i], radius * 0.9, 0);
@@ -202,6 +203,47 @@ function runSpin() {
   }, 1000);
 }
 
+
+function resolveWheelFontSize(workbook, worksheet) {
+  const excelDefaultFontPx = 15;
+
+  // Optional override: place text like "FONT_SIZE=18" in cell A1.
+  const a1 = worksheet && worksheet.A1 ? String(worksheet.A1.v || "").trim() : "";
+  const match = a1.match(/^FONT_SIZE\s*=\s*(\d+(?:\.\d+)?)$/i);
+  if (match) {
+    const parsed = Number(match[1]);
+    if (Number.isFinite(parsed) && parsed >= 10 && parsed <= 72) {
+      return parsed;
+    }
+  }
+
+  // Best effort for .xlsx files with style metadata.
+  try {
+    const firstSheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[firstSheetName];
+    for (const key of Object.keys(sheet)) {
+      if (key.startsWith("!")) {
+        continue;
+      }
+      const cell = sheet[key];
+      if (!cell || cell.v === undefined || cell.v === null || String(cell.v).trim() === "") {
+        continue;
+      }
+      if (cell.s && cell.s.font && cell.s.font.sz) {
+        const px = Number(cell.s.font.sz) * (96 / 72);
+        if (Number.isFinite(px) && px >= 10 && px <= 96) {
+          return px;
+        }
+      }
+      break;
+    }
+  } catch (error) {
+    // Fall back to default.
+  }
+
+  return excelDefaultFontPx;
+}
+
 function extractNamesFromWorkbook(workbook) {
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) {
@@ -214,11 +256,14 @@ function extractNamesFromWorkbook(workbook) {
   return rows
     .flat()
     .map((value) => String(value || "").trim())
-    .filter(Boolean);
+    .filter((value) => value && !/^FONT_SIZE\s*=\s*\d+(?:\.\d+)?$/i.test(value));
 }
 
 function applyWorkbook(arrayBuffer, sourceLabel) {
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  wheelFontPx = resolveWheelFontSize(workbook, worksheet);
   const excelNames = extractNamesFromWorkbook(workbook);
 
   if (excelNames.length < 2) {
