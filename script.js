@@ -2,15 +2,9 @@ let names = [];
 let nodes = [];
 let sparkTimer = null;
 
-const palette = [
-  "#d7263d",
-  "#3a86ff",
-  "#ff7f11",
-  "#2a9d8f",
-  "#8338ec",
-  "#ff006e",
-  "#118ab2",
-  "#ef476f",
+const holderStyles = [
+  { background: "#6c0218", color: "#ffffff" },
+  { background: "#fcb215", color: "#000000" },
 ];
 
 const spinButton = document.getElementById("spinButton");
@@ -71,7 +65,9 @@ function createNodes() {
     const el = document.createElement("div");
     el.className = "name-node";
     el.textContent = name;
-    el.style.background = palette[index % palette.length];
+    const style = holderStyles[index % holderStyles.length];
+    el.style.background = style.background;
+    el.style.color = style.color;
     nameStage.appendChild(el);
 
     const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
@@ -156,11 +152,8 @@ function startCandidateFlashing() {
       return;
     }
     nodes.forEach((node) => node.element.classList.remove("is-candidate"));
-    const picks = Math.max(1, Math.floor(nodes.length * 0.2));
-    for (let i = 0; i < picks; i += 1) {
-      const node = nodes[Math.floor(Math.random() * nodes.length)];
-      node.element.classList.add("is-candidate");
-    }
+    const node = nodes[Math.floor(Math.random() * nodes.length)];
+    node.element.classList.add("is-candidate");
   }, 85);
 }
 

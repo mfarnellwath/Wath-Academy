@@ -10,7 +10,7 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", Arial, sans-serif;
-  background: radial-gradient(circle at top, #8b1630 0%, #6c0218 50%, #3c000c 100%);
+  background: #000000;
   color: #fff;
 }
 
@@ -72,7 +72,7 @@ body {
   overflow: hidden;
   border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background: radial-gradient(circle at 40% 30%, rgba(170, 40, 70, 0.45), rgba(108, 2, 24, 0.75));
+  background: #000000;
   min-height: calc(100vh - 7.2rem);
 }
 
@@ -82,7 +82,7 @@ body {
   border-radius: 999px;
   font-weight: 700;
   color: #081018;
-  background: #d9fff6;
+  background: #6c0218;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
   user-select: none;
   white-space: nowrap;
@@ -90,10 +90,8 @@ body {
 }
 
 .name-node.is-candidate {
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.95), 0 0 20px rgba(255, 196, 0, 0.95);
-  transform: translate(-50%, -50%) scale(1.25);
-  background: #f5c400;
-  color: #2b1700;
+  box-shadow: 0 0 0 4px rgba(252, 178, 21, 0.95), 0 0 20px rgba(252, 178, 21, 0.9);
+  transform: translate(-50%, -50%) scale(1.28);
   z-index: 12;
 }
 
