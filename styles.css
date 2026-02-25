@@ -1,0 +1,142 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+  color: #0f172a;
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  margin-top: 0;
+  color: #334155;
+}
+
+.uploader {
+  border: 2px dashed #64748b;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 18px;
+  margin: 16px auto;
+  max-width: 700px;
+  transition: all 180ms ease;
+}
+
+.uploader.drag-over {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+#browseBtn {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.controls button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#spinBtn {
+  background: #16a34a;
+  color: white;
+}
+
+#clearBtn {
+  background: #ef4444;
+  color: white;
+}
+
+.controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.wheel-wrap {
+  position: relative;
+  width: 520px;
+  margin: 16px auto;
+}
+
+.pointer {
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 28px solid #0f172a;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -4px;
+  z-index: 2;
+}
+
+#wheelCanvas {
+  width: 520px;
+  max-width: 95vw;
+  height: auto;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.2);
+}
+
+.status {
+  margin: 12px auto;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.names-list {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 14px;
+  max-width: 700px;
+  margin: 14px auto;
+}
+
+#nameList {
+  text-align: left;
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding-left: 24px;
+}
+
+@media (max-width: 620px) {
+  .wheel-wrap,
+  #wheelCanvas {
+    width: 94vw;
+  }
+}
