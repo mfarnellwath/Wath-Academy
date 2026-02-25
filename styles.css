@@ -17,32 +17,41 @@ body {
 .app {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-rows: auto auto 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
 }
 
 .hud {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
   flex-wrap: wrap;
   text-align: center;
 }
 
-.spin-button {
+.spin-button,
+.apply-button {
   border: none;
   border-radius: 999px;
-  padding: 0.9rem 1.6rem;
-  font-size: 1.1rem;
+  padding: 0.85rem 1.45rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffd056 0%, #f08a19 100%);
   color: #111;
   cursor: pointer;
 }
 
-.spin-button:disabled {
+.spin-button {
+  background: linear-gradient(135deg, #ffd056 0%, #f08a19 100%);
+}
+
+.apply-button {
+  background: linear-gradient(135deg, #72f1b8 0%, #2cd9d9 100%);
+}
+
+.spin-button:disabled,
+.apply-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -53,8 +62,32 @@ body {
   padding: 0.3rem 0.8rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
+}
+
+.names-panel {
+  width: min(980px, 100%);
+  justify-self: center;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.names-label {
+  font-weight: 600;
+}
+
+.names-input {
+  width: 100%;
+  min-height: 4.2rem;
+  max-height: 6rem;
+  resize: vertical;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 0.7rem;
+  font: inherit;
 }
 
 .wheel-area {
@@ -65,15 +98,15 @@ body {
 }
 
 #wheelCanvas {
-  width: min(92vmin, calc(100vw - 2rem), calc(100vh - 9rem));
-  height: min(92vmin, calc(100vw - 2rem), calc(100vh - 9rem));
+  width: min(94vmin, calc(100vw - 1.5rem), calc(100vh - 14.5rem));
+  height: min(94vmin, calc(100vw - 1.5rem), calc(100vh - 14.5rem));
   border-radius: 50%;
   filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
 }
 
 .pointer {
   position: absolute;
-  top: 0.2rem;
+  top: 0.1rem;
   left: 50%;
   transform: translateX(-50%);
   width: 0;

@@ -1,4 +1,4 @@
-const names = [
+const defaultNames = [
   "Ava",
   "Noah",
   "Mia",
@@ -12,6 +12,8 @@ const names = [
   "Amelia",
   "James",
 ];
+
+let names = [...defaultNames];
 
 const colors = [
   "#ff595e",
@@ -31,6 +33,8 @@ const colors = [
 const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
+const applyNamesButton = document.getElementById("applyNamesButton");
+const namesInput = document.getElementById("namesInput");
 const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
 
@@ -41,6 +45,35 @@ let angle = 0;
 let velocity = 0;
 let spinning = false;
 let resizePending = false;
+
+function getParsedNames(raw) {
+  return raw
+    .split(/\r?\n/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function setInputToCurrentNames() {
+  namesInput.value = names.join("\n");
+}
+
+function applyNames() {
+  if (spinning) {
+    return;
+  }
+
+  const parsedNames = getParsedNames(namesInput.value);
+
+  if (parsedNames.length < 2) {
+    countdownText.textContent = "Please enter at least 2 names";
+    return;
+  }
+
+  names = parsedNames;
+  winnerText.textContent = "Winner: --";
+  countdownText.textContent = "Ready";
+  drawWheel();
+}
 
 function getWinnerFromAngle(currentAngle) {
   const sectorAngle = fullTurn / names.length;
@@ -80,7 +113,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(start + arc / 2);
     ctx.fillStyle = "#111";
-    ctx.font = `${Math.max(radius * 0.08, 16)}px Segoe UI`;
+    ctx.font = `${Math.max(radius * 0.08, 15)}px Segoe UI`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(names[i], radius * 0.9, 0);
@@ -103,6 +136,7 @@ function drawWheel() {
 
 function animationFrame() {
   angle += velocity;
+
   if (angle >= fullTurn) {
     angle -= fullTurn;
   }
@@ -124,6 +158,8 @@ function runSpin() {
 
   spinning = true;
   spinButton.disabled = true;
+  applyNamesButton.disabled = true;
+  namesInput.disabled = true;
   winnerText.textContent = "Winner: --";
 
   velocity = 0.28;
@@ -175,6 +211,8 @@ function runSpin() {
         winnerText.textContent = `Winner: ${winner}`;
         countdownText.textContent = "Ready";
         spinButton.disabled = false;
+        applyNamesButton.disabled = false;
+        namesInput.disabled = false;
         spinning = false;
       }
 
@@ -184,10 +222,12 @@ function runSpin() {
 }
 
 spinButton.addEventListener("click", runSpin);
+applyNamesButton.addEventListener("click", applyNames);
 
 window.addEventListener("resize", () => {
   resizePending = true;
 });
 
+setInputToCurrentNames();
 drawWheel();
 requestAnimationFrame(animationFrame);
