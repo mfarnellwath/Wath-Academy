@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Name Wheel Picker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <main class="app">
+    <h1>Random Name Spinner</h1>
+    <p class="subtitle">Drop an Excel file with names, then press <strong>Start</strong>.</p>
+
+    <section class="uploader" id="dropZone" aria-label="Upload names file">
+      <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
+      <p><strong>Drop file here</strong> or <button id="browseBtn" type="button">browse</button></p>
+      <small>Supports .xlsx, .xls, or .csv. Names can be in one column or spread across cells.</small>
+    </section>
+
+    <section class="controls">
+      <button id="spinBtn" type="button" disabled>Start</button>
+      <button id="clearBtn" type="button" disabled>Clear</button>
+    </section>
+
+    <section class="wheel-wrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <canvas id="wheelCanvas" width="520" height="520" aria-label="Name wheel"></canvas>
+    </section>
+
+    <section class="status" id="status">Upload a file to begin.</section>
+
+    <section class="names-list">
+      <h2>Loaded Names</h2>
+      <ol id="nameList"></ol>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
