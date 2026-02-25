@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Countdown Wheel</title>
+    <title>Floating Names Picker</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -16,10 +16,7 @@
         <p id="winner" class="winner">Winner: --</p>
       </header>
 
-      <section class="wheel-area">
-        <div class="pointer" aria-hidden="true"></div>
-        <canvas id="wheelCanvas" aria-label="Name spinner wheel"></canvas>
-      </section>
+      <section id="nameStage" class="name-stage" aria-label="Floating name picker stage"></section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>

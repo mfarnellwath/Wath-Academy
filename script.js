@@ -1,247 +1,176 @@
 let names = [];
+let nodes = [];
 
-const colors = [
-  "#ff595e",
-  "#ff924c",
-  "#ffca3a",
-  "#8ac926",
-  "#52b788",
-  "#1982c4",
-  "#4267ac",
-  "#6a4c93",
-  "#b5179e",
-  "#f15bb5",
-  "#00bbf9",
-  "#00f5d4",
+const palette = [
+  "#d9fff6",
+  "#ffd9f5",
+  "#ffe7bf",
+  "#c7f5ff",
+  "#e4ddff",
+  "#d6ffd9",
+  "#ffd6d6",
 ];
 
-const canvas = document.getElementById("wheelCanvas");
-const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
 const chooseFileButton = document.getElementById("chooseFileButton");
 const fileInput = document.getElementById("fileInput");
 const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
+const nameStage = document.getElementById("nameStage");
 
 const countdownSeconds = 15;
-const fullTurn = Math.PI * 2;
-const idleVelocity = 0.012;
-const activeVelocity = 0.28;
+const idleSpeed = 12;
+const orbitRadiusFactor = 0.35;
 
-let angle = 0;
-let velocity = idleVelocity;
-let spinning = false;
-let resizePending = false;
-let wheelFontPx = 15;
+let stageWidth = 0;
+let stageHeight = 0;
+let runningSelection = false;
+let mode = "idle";
+let lastFrame = performance.now();
 
-function getWinnerFromAngle(currentAngle) {
-  const sectorAngle = fullTurn / names.length;
-  const normalized = ((-currentAngle + fullTurn / 4) % fullTurn + fullTurn) % fullTurn;
-  const index = Math.floor(normalized / sectorAngle) % names.length;
-  return names[index];
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
-function drawEmptyWheel(center, radius) {
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, fullTurn);
-  ctx.fillStyle = "#1e2a52";
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, fullTurn);
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = "#ffffff";
-  ctx.stroke();
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `${Math.max(radius * 0.07, 16)}px Segoe UI`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Put names.xls beside index.html", center, center - 12);
-  ctx.fillText("or click 'Choose names.xls'", center, center + 20);
+function refreshStageSize() {
+  const rect = nameStage.getBoundingClientRect();
+  stageWidth = rect.width;
+  stageHeight = rect.height;
 }
 
-function drawWheel() {
-  const dpr = window.devicePixelRatio || 1;
-  const size = Math.min(canvas.clientWidth, canvas.clientHeight);
-  canvas.width = size * dpr;
-  canvas.height = size * dpr;
+function clearWinnerHighlight() {
+  nodes.forEach((node) => node.element.classList.remove("is-winner"));
+}
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, size, size);
+function createEmptyState(message) {
+  nameStage.innerHTML = "";
+  const empty = document.createElement("div");
+  empty.className = "empty-state";
+  empty.textContent = message;
+  nameStage.appendChild(empty);
+}
 
-  const center = size / 2;
-  const radius = center - 8;
+function createNodes() {
+  nameStage.innerHTML = "";
+  nodes = names.map((name, index) => {
+    const el = document.createElement("div");
+    el.className = "name-node";
+    el.textContent = name;
+    el.style.background = palette[index % palette.length];
+    nameStage.appendChild(el);
 
-  if (names.length < 2) {
-    drawEmptyWheel(center, radius);
+    const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
+    const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
+    const vx = (Math.random() - 0.5) * idleSpeed;
+    const vy = (Math.random() - 0.5) * idleSpeed;
+
+    return {
+      name,
+      element: el,
+      x,
+      y,
+      vx,
+      vy,
+      angleOffset: (fullTurn() / Math.max(names.length, 1)) * index,
+    };
+  });
+
+  applyNodePositions();
+}
+
+function applyNodePositions() {
+  nodes.forEach((node) => {
+    node.element.style.left = `${node.x}px`;
+    node.element.style.top = `${node.y}px`;
+  });
+}
+
+function fullTurn() {
+  return Math.PI * 2;
+}
+
+function updateIdlePositions(dt) {
+  nodes.forEach((node) => {
+    node.x += node.vx * dt;
+    node.y += node.vy * dt;
+
+    if (node.x < 55 || node.x > stageWidth - 55) {
+      node.vx *= -1;
+      node.x = clamp(node.x, 55, stageWidth - 55);
+    }
+
+    if (node.y < 40 || node.y > stageHeight - 40) {
+      node.vy *= -1;
+      node.y = clamp(node.y, 40, stageHeight - 40);
+    }
+  });
+}
+
+function updateOrbitPositions(timeMs) {
+  const centerX = stageWidth / 2;
+  const centerY = stageHeight / 2;
+  const radius = Math.min(stageWidth, stageHeight) * orbitRadiusFactor;
+  const baseAngle = timeMs * 0.0032;
+
+  nodes.forEach((node, idx) => {
+    const orbit = baseAngle + node.angleOffset + idx * 0.08;
+    const wobble = 1 + 0.12 * Math.sin(timeMs * 0.004 + idx);
+    node.x = centerX + Math.cos(orbit) * radius * wobble;
+    node.y = centerY + Math.sin(orbit) * radius * wobble;
+  });
+}
+
+function animationLoop(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+
+  if (nodes.length > 0) {
+    if (mode === "orbit") {
+      updateOrbitPositions(now);
+    } else {
+      updateIdlePositions(dt);
+    }
+    applyNodePositions();
+  }
+
+  requestAnimationFrame(animationLoop);
+}
+
+function chooseWinner() {
+  const winnerIndex = Math.floor(Math.random() * nodes.length);
+  const winnerNode = nodes[winnerIndex];
+  clearWinnerHighlight();
+  winnerNode.element.classList.add("is-winner");
+  winnerText.textContent = `Winner: ${winnerNode.name}`;
+}
+
+function runSelection() {
+  if (runningSelection || names.length < 2) {
     return;
   }
 
-  const arc = fullTurn / names.length;
-
-  ctx.save();
-  ctx.translate(center, center);
-  ctx.rotate(angle);
-
-  for (let i = 0; i < names.length; i += 1) {
-    const start = i * arc;
-    const end = start + arc;
-
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, radius, start, end);
-    ctx.closePath();
-    ctx.fillStyle = colors[i % colors.length];
-    ctx.fill();
-
-    ctx.save();
-    ctx.rotate(start + arc / 2);
-    ctx.fillStyle = "#111";
-    ctx.font = `${wheelFontPx}px Segoe UI`;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    ctx.fillText(names[i], radius * 0.9, 0);
-    ctx.restore();
-  }
-
-  ctx.restore();
-
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, fullTurn);
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = "#ffffff";
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(center, center, radius * 0.1, 0, fullTurn);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-}
-
-function animationFrame() {
-  angle += velocity;
-
-  if (angle >= fullTurn) {
-    angle -= fullTurn;
-  }
-
-  drawWheel();
-
-  if (resizePending) {
-    resizePending = false;
-    drawWheel();
-  }
-
-  requestAnimationFrame(animationFrame);
-}
-
-function runSpin() {
-  if (spinning || names.length < 2) {
-    return;
-  }
-
-  spinning = true;
+  runningSelection = true;
+  mode = "orbit";
   spinButton.disabled = true;
   winnerText.textContent = "Winner: --";
+  clearWinnerHighlight();
 
-  velocity = activeVelocity;
   let timeLeft = countdownSeconds;
-  countdownText.textContent = `Landing in ${timeLeft}s`;
+  countdownText.textContent = `Picking in ${timeLeft}s`;
 
   const timer = setInterval(() => {
     timeLeft -= 1;
-    countdownText.textContent =
-      timeLeft > 0 ? `Landing in ${timeLeft}s` : "Landing now...";
+    countdownText.textContent = timeLeft > 0 ? `Picking in ${timeLeft}s` : "Picking now...";
 
     if (timeLeft <= 0) {
       clearInterval(timer);
-
-      const winnerIndex = Math.floor(Math.random() * names.length);
-      const sectorAngle = fullTurn / names.length;
-      const winnerCenter = winnerIndex * sectorAngle + sectorAngle / 2;
-
-      const pointerAngle = fullTurn / 4;
-      const minimumSpins = 7;
-      const normalizedCurrent = ((angle % fullTurn) + fullTurn) % fullTurn;
-      const targetBase = pointerAngle - winnerCenter;
-      const targetOffset =
-        ((targetBase - normalizedCurrent) % fullTurn + fullTurn) % fullTurn;
-      const totalRotation = minimumSpins * fullTurn + targetOffset;
-
-      const durationMs = 3600;
-      const start = performance.now();
-      const startAngle = angle;
-
-      function easeOutCubic(t) {
-        return 1 - (1 - t) ** 3;
-      }
-
-      function decelerate(now) {
-        const progress = Math.min((now - start) / durationMs, 1);
-        const eased = easeOutCubic(progress);
-        angle = startAngle + totalRotation * eased;
-        velocity = 0;
-        drawWheel();
-
-        if (progress < 1) {
-          requestAnimationFrame(decelerate);
-          return;
-        }
-
-        angle %= fullTurn;
-        const winner = getWinnerFromAngle(angle);
-        winnerText.textContent = `Winner: ${winner}`;
-        countdownText.textContent = "Auto-spinning";
-        velocity = idleVelocity;
-        spinButton.disabled = false;
-        spinning = false;
-      }
-
-      requestAnimationFrame(decelerate);
+      chooseWinner();
+      mode = "idle";
+      countdownText.textContent = "Ready";
+      spinButton.disabled = false;
+      runningSelection = false;
     }
   }, 1000);
-}
-
-
-function resolveWheelFontSize(workbook, worksheet) {
-  const excelDefaultFontPx = 15;
-
-  // Optional override: place text like "FONT_SIZE=18" in cell A1.
-  const a1 = worksheet && worksheet.A1 ? String(worksheet.A1.v || "").trim() : "";
-  const match = a1.match(/^FONT_SIZE\s*=\s*(\d+(?:\.\d+)?)$/i);
-  if (match) {
-    const parsed = Number(match[1]);
-    if (Number.isFinite(parsed) && parsed >= 10 && parsed <= 72) {
-      return parsed;
-    }
-  }
-
-  // Best effort for .xlsx files with style metadata.
-  try {
-    const firstSheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[firstSheetName];
-    for (const key of Object.keys(sheet)) {
-      if (key.startsWith("!")) {
-        continue;
-      }
-      const cell = sheet[key];
-      if (!cell || cell.v === undefined || cell.v === null || String(cell.v).trim() === "") {
-        continue;
-      }
-      if (cell.s && cell.s.font && cell.s.font.sz) {
-        const px = Number(cell.s.font.sz) * (96 / 72);
-        if (Number.isFinite(px) && px >= 10 && px <= 96) {
-          return px;
-        }
-      }
-      break;
-    }
-  } catch (error) {
-    // Fall back to default.
-  }
-
-  return excelDefaultFontPx;
 }
 
 function extractNamesFromWorkbook(workbook) {
@@ -261,20 +190,19 @@ function extractNamesFromWorkbook(workbook) {
 
 function applyWorkbook(arrayBuffer, sourceLabel) {
   const workbook = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  wheelFontPx = resolveWheelFontSize(workbook, worksheet);
   const excelNames = extractNamesFromWorkbook(workbook);
 
   if (excelNames.length < 2) {
     countdownText.textContent = `${sourceLabel} needs at least 2 names`;
+    createEmptyState("Need at least 2 names in the sheet.");
     return false;
   }
 
   names = excelNames;
-  spinButton.disabled = false;
+  refreshStageSize();
+  createNodes();
   countdownText.textContent = `Loaded ${excelNames.length} names from ${sourceLabel}`;
-  drawWheel();
+  spinButton.disabled = false;
   return true;
 }
 
@@ -306,6 +234,7 @@ function tryXhrArrayBuffer(path) {
 async function loadNamesFromFolder() {
   if (typeof XLSX === "undefined") {
     countdownText.textContent = "Excel parser failed to load";
+    createEmptyState("XLSX library failed to load.");
     return;
   }
 
@@ -333,12 +262,13 @@ async function loadNamesFromFolder() {
   }
 
   if (window.location.protocol === "file:") {
-    countdownText.textContent =
-      "File:// blocked reading names.xls. Click 'Choose names.xls' to load manually.";
+    countdownText.textContent = "File access blocked. Click 'Choose names.xls'.";
+    createEmptyState("Browser blocked file access. Use 'Choose names.xls'.");
     return;
   }
 
-  countdownText.textContent = "No valid names.xls found (need at least 2 names)";
+  countdownText.textContent = "No valid names.xls found";
+  createEmptyState("Could not find names.xls / names.xlsx in this folder.");
 }
 
 async function loadNamesFromPicker(file) {
@@ -351,13 +281,12 @@ async function loadNamesFromPicker(file) {
     applyWorkbook(arrayBuffer, file.name);
   } catch (error) {
     countdownText.textContent = "Could not read selected file";
+    createEmptyState("Selected file could not be read.");
   }
 }
 
-spinButton.addEventListener("click", runSpin);
-chooseFileButton.addEventListener("click", () => {
-  fileInput.click();
-});
+spinButton.addEventListener("click", runSelection);
+chooseFileButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", (event) => {
   const [file] = event.target.files;
   loadNamesFromPicker(file);
@@ -365,9 +294,13 @@ fileInput.addEventListener("change", (event) => {
 });
 
 window.addEventListener("resize", () => {
-  resizePending = true;
+  refreshStageSize();
+  if (names.length > 0) {
+    createNodes();
+  }
 });
 
-drawWheel();
-requestAnimationFrame(animationFrame);
+refreshStageSize();
+createEmptyState("Loading names from Excel...");
+requestAnimationFrame(animationLoop);
 loadNamesFromFolder();

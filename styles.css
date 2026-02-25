@@ -65,30 +65,42 @@ body {
   font-weight: 700;
 }
 
-.wheel-area {
+.name-stage {
   position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(circle at 40% 30%, rgba(60, 85, 190, 0.4), rgba(10, 20, 55, 0.6));
+  min-height: calc(100vh - 7.2rem);
+}
+
+.name-node {
+  position: absolute;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #081018;
+  background: #d9fff6;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  user-select: none;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.name-node.is-winner {
+  background: #ffd056;
+  color: #111;
+  box-shadow: 0 0 0 4px rgba(255, 208, 86, 0.35), 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+
+.empty-state {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  min-height: 0;
-}
-
-#wheelCanvas {
-  width: min(96vmin, calc(100vw - 1.5rem), calc(100vh - 7.5rem));
-  height: min(96vmin, calc(100vw - 1.5rem), calc(100vh - 7.5rem));
-  border-radius: 50%;
-  filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
-}
-
-.pointer {
-  position: absolute;
-  top: 0.1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 24px solid transparent;
-  border-right: 24px solid transparent;
-  border-top: 44px solid #fff;
-  z-index: 4;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  text-align: center;
+  padding: 1rem;
+  font-size: 1.15rem;
+  opacity: 0.95;
 }
