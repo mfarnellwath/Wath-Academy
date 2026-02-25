@@ -1,5 +1,6 @@
 let names = [];
 let nodes = [];
+let sparkTimer = null;
 
 const palette = [
   "#d9fff6",
@@ -20,7 +21,7 @@ const nameStage = document.getElementById("nameStage");
 
 const countdownSeconds = 15;
 const idleSpeed = 12;
-const orbitRadiusFactor = 0.35;
+const juggleSpeed = 42;
 
 let stageWidth = 0;
 let stageHeight = 0;
@@ -40,6 +41,14 @@ function refreshStageSize() {
 
 function clearWinnerHighlight() {
   nodes.forEach((node) => node.element.classList.remove("is-winner"));
+}
+
+function clearSparks() {
+  nameStage.querySelectorAll('.spark').forEach((spark) => spark.remove());
+  if (sparkTimer) {
+    clearInterval(sparkTimer);
+    sparkTimer = null;
+  }
 }
 
 function createEmptyState(message) {
@@ -64,15 +73,7 @@ function createNodes() {
     const vx = (Math.random() - 0.5) * idleSpeed;
     const vy = (Math.random() - 0.5) * idleSpeed;
 
-    return {
-      name,
-      element: el,
-      x,
-      y,
-      vx,
-      vy,
-      angleOffset: (fullTurn() / Math.max(names.length, 1)) * index,
-    };
+    return { name, element: el, x, y, vx, vy };
   });
 
   applyNodePositions();
@@ -85,12 +86,15 @@ function applyNodePositions() {
   });
 }
 
-function fullTurn() {
-  return Math.PI * 2;
-}
-
-function updateIdlePositions(dt) {
+function updateBouncePositions(dt, maxSpeed) {
   nodes.forEach((node) => {
+    if (mode === "juggle") {
+      node.vx += (Math.random() - 0.5) * 6;
+      node.vy += (Math.random() - 0.5) * 6;
+      node.vx = clamp(node.vx, -maxSpeed, maxSpeed);
+      node.vy = clamp(node.vy, -maxSpeed, maxSpeed);
+    }
+
     node.x += node.vx * dt;
     node.y += node.vy * dt;
 
@@ -106,29 +110,15 @@ function updateIdlePositions(dt) {
   });
 }
 
-function updateOrbitPositions(timeMs) {
-  const centerX = stageWidth / 2;
-  const centerY = stageHeight / 2;
-  const radius = Math.min(stageWidth, stageHeight) * orbitRadiusFactor;
-  const baseAngle = timeMs * 0.0032;
-
-  nodes.forEach((node, idx) => {
-    const orbit = baseAngle + node.angleOffset + idx * 0.08;
-    const wobble = 1 + 0.12 * Math.sin(timeMs * 0.004 + idx);
-    node.x = centerX + Math.cos(orbit) * radius * wobble;
-    node.y = centerY + Math.sin(orbit) * radius * wobble;
-  });
-}
-
 function animationLoop(now) {
   const dt = Math.min((now - lastFrame) / 1000, 0.05);
   lastFrame = now;
 
   if (nodes.length > 0) {
-    if (mode === "orbit") {
-      updateOrbitPositions(now);
+    if (mode === "juggle") {
+      updateBouncePositions(dt, juggleSpeed);
     } else {
-      updateIdlePositions(dt);
+      updateBouncePositions(dt, idleSpeed);
     }
     applyNodePositions();
   }
@@ -136,12 +126,40 @@ function animationLoop(now) {
   requestAnimationFrame(animationLoop);
 }
 
+function spawnSparkBurst(winnerNode) {
+  const sparks = 14;
+  const baseX = winnerNode.x;
+  const baseY = winnerNode.y;
+
+  for (let i = 0; i < sparks; i += 1) {
+    const spark = document.createElement('span');
+    spark.className = 'spark';
+    const angle = (Math.PI * 2 * i) / sparks + Math.random() * 0.25;
+    const distance = 40 + Math.random() * 65;
+    spark.style.left = `${baseX}px`;
+    spark.style.top = `${baseY}px`;
+    spark.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+    spark.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+    spark.style.animationDelay = `${Math.random() * 0.08}s`;
+    nameStage.appendChild(spark);
+    spark.addEventListener('animationend', () => spark.remove(), { once: true });
+  }
+}
+
 function chooseWinner() {
   const winnerIndex = Math.floor(Math.random() * nodes.length);
   const winnerNode = nodes[winnerIndex];
   clearWinnerHighlight();
+  clearSparks();
   winnerNode.element.classList.add("is-winner");
+  winnerNode.element.style.zIndex = "20";
   winnerText.textContent = `Winner: ${winnerNode.name}`;
+
+  spawnSparkBurst(winnerNode);
+  sparkTimer = setInterval(() => spawnSparkBurst(winnerNode), 280);
+  setTimeout(() => {
+    clearSparks();
+  }, 2600);
 }
 
 function runSelection() {
@@ -150,10 +168,16 @@ function runSelection() {
   }
 
   runningSelection = true;
-  mode = "orbit";
+  mode = "juggle";
   spinButton.disabled = true;
   winnerText.textContent = "Winner: --";
   clearWinnerHighlight();
+  clearSparks();
+
+  nodes.forEach((node) => {
+    node.vx = (Math.random() - 0.5) * juggleSpeed;
+    node.vy = (Math.random() - 0.5) * juggleSpeed;
+  });
 
   let timeLeft = countdownSeconds;
   countdownText.textContent = `Picking in ${timeLeft}s`;
@@ -166,6 +190,10 @@ function runSelection() {
       clearInterval(timer);
       chooseWinner();
       mode = "idle";
+      nodes.forEach((node) => {
+        node.vx = (Math.random() - 0.5) * idleSpeed;
+        node.vy = (Math.random() - 0.5) * idleSpeed;
+      });
       countdownText.textContent = "Ready";
       spinButton.disabled = false;
       runningSelection = false;

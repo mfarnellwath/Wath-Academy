@@ -91,7 +91,8 @@ body {
   background: #ffd056;
   color: #111;
   box-shadow: 0 0 0 4px rgba(255, 208, 86, 0.35), 0 10px 24px rgba(0, 0, 0, 0.45);
-  z-index: 10;
+  z-index: 20;
+  transform: translate(-50%, -50%) scale(1.35);
 }
 
 .empty-state {
@@ -103,4 +104,28 @@ body {
   padding: 1rem;
   font-size: 1.15rem;
   opacity: 0.95;
+}
+
+
+.spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff9b2 0%, #ffd056 50%, #ff8b1f 100%);
+  pointer-events: none;
+  z-index: 15;
+  transform: translate(-50%, -50%);
+  animation: spark-burst 520ms ease-out forwards;
+}
+
+@keyframes spark-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.75);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.1);
+  }
 }
