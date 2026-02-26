@@ -5,7 +5,7 @@ REM Build a single-file Windows executable from launcher.py
 python -m pip install --upgrade pip
 python -m pip install pyinstaller
 
-pyinstaller --noconfirm --onefile --name WathPicker ^
+python -m PyInstaller --noconfirm --onefile --name WathPicker ^
   --add-data "index.html;." ^
   --add-data "styles.css;." ^
   --add-data "script.js;." ^

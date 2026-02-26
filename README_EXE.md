@@ -13,3 +13,6 @@ This project is a static web app. To run it as a single contained desktop execut
 - Serves bundled app files from inside the executable.
 
 > Note: Keep `fastest finger first.mp3` in the same folder as the EXE at runtime if you want countdown music.
+
+
+If PowerShell reports `pyinstaller` as not recognized, these scripts already use `python -m PyInstaller`, so ensure `python` is available in your PATH and rerun.
