@@ -40,6 +40,13 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+
+function randomVelocity(maxSpeed) {
+  const minSpeed = Math.max(8, maxSpeed * 0.22);
+  const sign = Math.random() < 0.5 ? -1 : 1;
+  return sign * (minSpeed + Math.random() * (maxSpeed - minSpeed));
+}
+
 function refreshStageSize() {
   const rect = nameStage.getBoundingClientRect();
   stageWidth = rect.width;
@@ -91,8 +98,8 @@ function createGhostNodes() {
 
     const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
     const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
-    const vx = (Math.random() - 0.5) * idleSpeed;
-    const vy = (Math.random() - 0.5) * idleSpeed;
+    const vx = randomVelocity(idleSpeed);
+    const vy = randomVelocity(idleSpeed);
 
     return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: true };
   });
@@ -113,8 +120,8 @@ function createNodes() {
 
     const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
     const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
-    const vx = (Math.random() - 0.5) * idleSpeed;
-    const vy = (Math.random() - 0.5) * idleSpeed;
+    const vx = randomVelocity(idleSpeed);
+    const vy = randomVelocity(idleSpeed);
 
     return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: false };
   });
@@ -257,8 +264,8 @@ function runSelection() {
 
   nodes.forEach((node) => {
     node.isWinner = false;
-    node.vx = (Math.random() - 0.5) * juggleSpeed;
-    node.vy = (Math.random() - 0.5) * juggleSpeed;
+    node.vx = randomVelocity(juggleSpeed);
+    node.vy = randomVelocity(juggleSpeed);
   });
 
   startCandidateFlashing();
@@ -278,8 +285,8 @@ function runSelection() {
         if (node.isWinner) {
           return;
         }
-        node.vx = (Math.random() - 0.5) * idleSpeed;
-        node.vy = (Math.random() - 0.5) * idleSpeed;
+        node.vx = randomVelocity(idleSpeed);
+        node.vy = randomVelocity(idleSpeed);
       });
       countdownText.textContent = "Ready";
       spinButton.disabled = false;
