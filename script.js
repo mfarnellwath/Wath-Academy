@@ -25,7 +25,7 @@ const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
 
-const countdownSeconds = 15;
+const countdownSeconds = 7;
 const idleSpeed = 70;
 const juggleSpeed = 105;
 
