@@ -17,12 +17,18 @@ body {
 .app {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.75rem;
+  grid-template-rows: auto auto 1fr;
+  gap: 0.5rem;
   padding: 0.75rem;
   position: relative;
 }
 
+.brand-logo {
+  width: clamp(110px, 16vw, 180px);
+  height: auto;
+  justify-self: center;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5));
+}
 
 .hud {
   display: flex;
