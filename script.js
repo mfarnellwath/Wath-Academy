@@ -24,8 +24,10 @@ const fileInput = document.getElementById("fileInput");
 const countdownText = document.getElementById("countdown");
 const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
+const countdownAudio = new Audio("fastest finger first.mp3");
+countdownAudio.preload = "auto";
 
-const countdownSeconds = 7;
+const countdownSeconds = 10.5;
 const idleSpeed = 70;
 const juggleSpeed = 105;
 
@@ -278,15 +280,28 @@ function runSelection() {
 
   startCandidateFlashing();
 
-  let timeLeft = countdownSeconds;
-  countdownText.textContent = `Picking in ${timeLeft}s`;
+  const startTime = performance.now();
+  const durationMs = countdownSeconds * 1000;
+
+  countdownAudio.currentTime = 0;
+  countdownAudio.play().catch(() => {
+    // Ignore autoplay/file errors; visual countdown still runs.
+  });
 
   const timer = setInterval(() => {
-    timeLeft -= 1;
-    countdownText.textContent = timeLeft > 0 ? `Picking in ${timeLeft}s` : "Picking now...";
+    const elapsed = performance.now() - startTime;
+    const remainingMs = Math.max(0, durationMs - elapsed);
+    const remainingSeconds = remainingMs / 1000;
 
-    if (timeLeft <= 0) {
+    countdownText.textContent =
+      remainingSeconds > 0
+        ? `Picking in ${remainingSeconds.toFixed(1)}s`
+        : "Picking now...";
+
+    if (remainingMs <= 0) {
       clearInterval(timer);
+      countdownAudio.pause();
+      countdownAudio.currentTime = 0;
       chooseWinner();
       mode = "idle";
       nodes.forEach((node) => {
@@ -300,7 +315,7 @@ function runSelection() {
       spinButton.disabled = false;
       runningSelection = false;
     }
-  }, 1000);
+  }, 100);
 }
 
 function extractNamesFromWorkbook(workbook) {
