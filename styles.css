@@ -90,8 +90,8 @@ body {
 }
 
 .name-node.is-ghost {
-  opacity: 0.45;
-  filter: saturate(0.8);
+  opacity: 0.82;
+  filter: saturate(0.95);
 }
 
 .name-node.is-candidate {
@@ -115,13 +115,19 @@ body {
 
 .empty-state {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+  top: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
-  padding: 1rem;
-  font-size: 1.15rem;
-  opacity: 0.95;
+  padding: 0.5rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(252, 178, 21, 0.55);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fcb215;
+  pointer-events: none;
+  z-index: 30;
 }
 
 
