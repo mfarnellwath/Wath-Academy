@@ -165,3 +165,17 @@ body {
 }
 
 
+
+
+.name-node.is-ghost {
+  animation: ghost-bob var(--ghost-bob-duration, 2.8s) ease-in-out var(--ghost-bob-delay, 0s) infinite alternate;
+}
+
+@keyframes ghost-bob {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    transform: translate(-50%, calc(-50% - 12px)) scale(1.05);
+  }
+}

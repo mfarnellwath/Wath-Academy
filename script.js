@@ -94,6 +94,8 @@ function createGhostNodes() {
     const style = holderStyles[index % holderStyles.length];
     el.style.background = style.background;
     el.style.color = style.color;
+    el.style.setProperty("--ghost-bob-duration", `${2.1 + Math.random() * 1.8}s`);
+    el.style.setProperty("--ghost-bob-delay", `${Math.random() * 1.2}s`);
     nameStage.appendChild(el);
 
     const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
@@ -116,6 +118,8 @@ function createNodes() {
     const style = holderStyles[index % holderStyles.length];
     el.style.background = style.background;
     el.style.color = style.color;
+    el.style.setProperty("--ghost-bob-duration", `${2.1 + Math.random() * 1.8}s`);
+    el.style.setProperty("--ghost-bob-delay", `${Math.random() * 1.2}s`);
     nameStage.appendChild(el);
 
     const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
