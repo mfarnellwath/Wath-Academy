@@ -26,6 +26,7 @@ const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
 const countdownAudio = new Audio("fastest finger first.mp3");
 countdownAudio.preload = "auto";
+countdownAudio.loop = false;
 
 const countdownSeconds = 10.5;
 const idleSpeed = 70;
@@ -300,8 +301,6 @@ function runSelection() {
 
     if (remainingMs <= 0) {
       clearInterval(timer);
-      countdownAudio.pause();
-      countdownAudio.currentTime = 0;
       chooseWinner();
       mode = "idle";
       nodes.forEach((node) => {
