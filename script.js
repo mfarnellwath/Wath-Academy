@@ -26,7 +26,7 @@ const winnerText = document.getElementById("winner");
 const nameStage = document.getElementById("nameStage");
 
 const countdownSeconds = 15;
-const idleSpeed = 30;
+const idleSpeed = 70;
 const juggleSpeed = 105;
 
 let stageWidth = 0;
@@ -149,8 +149,16 @@ function updateBouncePositions(dt, maxSpeed) {
       node.vy = clamp(node.vy, -maxSpeed, maxSpeed);
     }
 
-    node.x += node.vx * dt;
-    node.y += node.vy * dt;
+    if (node.isGhost && mode === "idle") {
+      node.vx += (Math.random() - 0.5) * 1.8;
+      node.vy += (Math.random() - 0.5) * 1.8;
+      node.vx = clamp(node.vx, -maxSpeed, maxSpeed);
+      node.vy = clamp(node.vy, -maxSpeed, maxSpeed);
+    }
+
+    const speedBoost = node.isGhost && mode === "idle" ? 1.85 : 1;
+    node.x += node.vx * dt * speedBoost;
+    node.y += node.vy * dt * speedBoost;
 
     if (node.x < 55 || node.x > stageWidth - 55) {
       node.vx *= -1;
