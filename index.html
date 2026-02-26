@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Floating Names Picker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <img src="logo.svg" alt="Wath Academy crest" class="brand-logo" />
+      <header class="hud">
+        <button id="spinButton" class="spin-button" disabled>Start</button>
+        <button id="chooseFileButton" class="file-button">Choose names.xls</button>
+        <input id="fileInput" type="file" accept=".xls,.xlsx" hidden />
+        <p id="countdown" class="countdown">Looking for names.xls...</p>
+        <p id="winner" class="winner">Winner: --</p>
+      </header>
+
+      <section id="nameStage" class="name-stage" aria-label="Floating name picker stage"></section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

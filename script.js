@@ -1,0 +1,461 @@
+let names = [];
+let nodes = [];
+let sparkTimer = null;
+
+const holderStyles = [
+  { background: "#6c0218", color: "#ffffff" },
+  { background: "#fcb215", color: "#000000" },
+];
+
+const ghostNames = [
+  "Wath",
+  "Academy",
+  "Ready",
+  "Picker",
+  "Select",
+  "Winner",
+  "Names",
+  "Live",
+];
+
+const spinButton = document.getElementById("spinButton");
+const chooseFileButton = document.getElementById("chooseFileButton");
+const fileInput = document.getElementById("fileInput");
+const countdownText = document.getElementById("countdown");
+const winnerText = document.getElementById("winner");
+const nameStage = document.getElementById("nameStage");
+const countdownAudio = new Audio("fastest finger first.mp3");
+countdownAudio.preload = "auto";
+countdownAudio.loop = false;
+
+const countdownSeconds = 10.5;
+const idleSpeed = 70;
+const juggleSpeed = 105;
+
+let stageWidth = 0;
+let stageHeight = 0;
+let runningSelection = false;
+let mode = "idle";
+let lastFrame = performance.now();
+let candidateFlashTimer = null;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+
+function randomVelocity(maxSpeed) {
+  const minSpeed = Math.max(8, maxSpeed * 0.22);
+  const sign = Math.random() < 0.5 ? -1 : 1;
+  return sign * (minSpeed + Math.random() * (maxSpeed - minSpeed));
+}
+
+function refreshStageSize() {
+  const rect = nameStage.getBoundingClientRect();
+  stageWidth = rect.width;
+  stageHeight = rect.height;
+}
+
+function clearWinnerHighlight() {
+  nodes.forEach((node) => {
+    node.element.classList.remove("is-winner");
+    node.element.classList.remove("is-candidate");
+    node.element.style.zIndex = "";
+  });
+}
+
+function clearSparks() {
+  nameStage.querySelectorAll('.spark').forEach((spark) => spark.remove());
+  if (sparkTimer) {
+    clearInterval(sparkTimer);
+    sparkTimer = null;
+  }
+}
+
+function clearEmptyState() {
+  const existing = nameStage.querySelector(".empty-state");
+  if (existing) {
+    existing.remove();
+  }
+}
+
+function createEmptyState(message) {
+  clearEmptyState();
+  const empty = document.createElement("div");
+  empty.className = "empty-state";
+  empty.textContent = message;
+  nameStage.appendChild(empty);
+}
+
+function createGhostNodes() {
+  clearEmptyState();
+  nameStage.innerHTML = "";
+  nodes = ghostNames.map((name, index) => {
+    const el = document.createElement("div");
+    el.className = "name-node is-ghost";
+    el.textContent = name;
+    const style = holderStyles[index % holderStyles.length];
+    el.style.background = style.background;
+    el.style.color = style.color;
+    el.style.setProperty("--ghost-bob-duration", `${2.1 + Math.random() * 1.8}s`);
+    el.style.setProperty("--ghost-bob-delay", `${Math.random() * 1.2}s`);
+    nameStage.appendChild(el);
+
+    const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
+    const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
+    const vx = randomVelocity(idleSpeed);
+    const vy = randomVelocity(idleSpeed);
+
+    return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: true };
+  });
+
+  applyNodePositions();
+}
+
+function createNodes() {
+  nameStage.innerHTML = "";
+  nodes = names.map((name, index) => {
+    const el = document.createElement("div");
+    el.className = "name-node";
+    el.textContent = name;
+    const style = holderStyles[index % holderStyles.length];
+    el.style.background = style.background;
+    el.style.color = style.color;
+    el.style.setProperty("--ghost-bob-duration", `${2.1 + Math.random() * 1.8}s`);
+    el.style.setProperty("--ghost-bob-delay", `${Math.random() * 1.2}s`);
+    nameStage.appendChild(el);
+
+    const x = 80 + Math.random() * Math.max(stageWidth - 160, 1);
+    const y = 70 + Math.random() * Math.max(stageHeight - 140, 1);
+    const vx = randomVelocity(idleSpeed);
+    const vy = randomVelocity(idleSpeed);
+
+    return { name, element: el, x, y, vx, vy, isWinner: false, isGhost: false };
+  });
+
+  applyNodePositions();
+}
+
+function applyNodePositions() {
+  nodes.forEach((node) => {
+    node.element.style.left = `${node.x}px`;
+    node.element.style.top = `${node.y}px`;
+  });
+}
+
+function updateBouncePositions(dt, maxSpeed) {
+  nodes.forEach((node) => {
+    if (node.isWinner) {
+      return;
+    }
+
+    if (mode === "juggle") {
+      node.vx += (Math.random() - 0.5) * 6;
+      node.vy += (Math.random() - 0.5) * 6;
+      node.vx = clamp(node.vx, -maxSpeed, maxSpeed);
+      node.vy = clamp(node.vy, -maxSpeed, maxSpeed);
+    }
+
+    if (node.isGhost && mode === "idle") {
+      node.vx += (Math.random() - 0.5) * 1.8;
+      node.vy += (Math.random() - 0.5) * 1.8;
+      node.vx = clamp(node.vx, -maxSpeed, maxSpeed);
+      node.vy = clamp(node.vy, -maxSpeed, maxSpeed);
+    }
+
+    const speedBoost = node.isGhost && mode === "idle" ? 1.85 : 1;
+    node.x += node.vx * dt * speedBoost;
+    node.y += node.vy * dt * speedBoost;
+
+    if (node.x < 55 || node.x > stageWidth - 55) {
+      node.vx *= -1;
+      node.x = clamp(node.x, 55, stageWidth - 55);
+    }
+
+    if (node.y < 40 || node.y > stageHeight - 40) {
+      node.vy *= -1;
+      node.y = clamp(node.y, 40, stageHeight - 40);
+    }
+  });
+}
+
+function animationLoop(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+
+  if (nodes.length > 0) {
+    if (mode === "juggle") {
+      updateBouncePositions(dt, juggleSpeed);
+    } else {
+      updateBouncePositions(dt, idleSpeed);
+    }
+    applyNodePositions();
+  }
+
+  requestAnimationFrame(animationLoop);
+}
+
+
+function stopCandidateFlashing() {
+  if (candidateFlashTimer) {
+    clearInterval(candidateFlashTimer);
+    candidateFlashTimer = null;
+  }
+  nodes.forEach((node) => node.element.classList.remove("is-candidate"));
+}
+
+function startCandidateFlashing() {
+  stopCandidateFlashing();
+  candidateFlashTimer = setInterval(() => {
+    if (nodes.length < 1) {
+      return;
+    }
+    nodes.forEach((node) => node.element.classList.remove("is-candidate"));
+    const node = nodes[Math.floor(Math.random() * nodes.length)];
+    node.element.classList.add("is-candidate");
+  }, 85);
+}
+
+function spawnSparkBurst(winnerNode) {
+  const sparks = 14;
+  const baseX = winnerNode.x;
+  const baseY = winnerNode.y;
+
+  for (let i = 0; i < sparks; i += 1) {
+    const spark = document.createElement('span');
+    spark.className = 'spark';
+    const angle = (Math.PI * 2 * i) / sparks + Math.random() * 0.25;
+    const distance = 40 + Math.random() * 65;
+    spark.style.left = `${baseX}px`;
+    spark.style.top = `${baseY}px`;
+    spark.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+    spark.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+    spark.style.animationDelay = `${Math.random() * 0.08}s`;
+    nameStage.appendChild(spark);
+    spark.addEventListener('animationend', () => spark.remove(), { once: true });
+  }
+}
+
+function chooseWinner() {
+  const winnerIndex = Math.floor(Math.random() * nodes.length);
+  const winnerNode = nodes[winnerIndex];
+  clearWinnerHighlight();
+  stopCandidateFlashing();
+  clearSparks();
+  winnerNode.isWinner = true;
+  winnerNode.x = stageWidth / 2;
+  winnerNode.y = stageHeight / 2;
+  winnerNode.vx = 0;
+  winnerNode.vy = 0;
+  applyNodePositions();
+
+  winnerNode.element.classList.add("is-winner");
+  winnerNode.element.style.zIndex = "20";
+  winnerText.textContent = `Winner: ${winnerNode.name}`;
+
+  spawnSparkBurst(winnerNode);
+  sparkTimer = setInterval(() => spawnSparkBurst(winnerNode), 280);
+  setTimeout(() => {
+    clearSparks();
+  }, 2600);
+}
+
+function runSelection() {
+  if (runningSelection || names.length < 2) {
+    return;
+  }
+
+  runningSelection = true;
+  mode = "juggle";
+  spinButton.disabled = true;
+  winnerText.textContent = "Winner: --";
+  clearWinnerHighlight();
+  stopCandidateFlashing();
+  clearSparks();
+
+  nodes.forEach((node) => {
+    node.isWinner = false;
+    node.vx = randomVelocity(juggleSpeed);
+    node.vy = randomVelocity(juggleSpeed);
+  });
+
+  startCandidateFlashing();
+
+  const startTime = performance.now();
+  const durationMs = countdownSeconds * 1000;
+
+  countdownAudio.currentTime = 0;
+  countdownAudio.play().catch(() => {
+    // Ignore autoplay/file errors; visual countdown still runs.
+  });
+
+  const timer = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const remainingMs = Math.max(0, durationMs - elapsed);
+    const remainingSeconds = remainingMs / 1000;
+
+    countdownText.textContent =
+      remainingSeconds > 0
+        ? `Picking in ${remainingSeconds.toFixed(1)}s`
+        : "Picking now...";
+
+    if (remainingMs <= 0) {
+      clearInterval(timer);
+      chooseWinner();
+      mode = "idle";
+      nodes.forEach((node) => {
+        if (node.isWinner) {
+          return;
+        }
+        node.vx = randomVelocity(idleSpeed);
+        node.vy = randomVelocity(idleSpeed);
+      });
+      countdownText.textContent = "Ready";
+      spinButton.disabled = false;
+      runningSelection = false;
+    }
+  }, 100);
+}
+
+function extractNamesFromWorkbook(workbook) {
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    return [];
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+
+  return rows
+    .flat()
+    .map((value) => String(value || "").trim())
+    .filter((value) => value && !/^FONT_SIZE\s*=\s*\d+(?:\.\d+)?$/i.test(value));
+}
+
+function applyWorkbook(arrayBuffer, sourceLabel) {
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
+  const excelNames = extractNamesFromWorkbook(workbook);
+
+  if (excelNames.length < 2) {
+    countdownText.textContent = `${sourceLabel} needs at least 2 names`;
+    createGhostNodes();
+    createEmptyState("Need at least 2 names in the sheet.");
+    return false;
+  }
+
+  names = excelNames;
+  refreshStageSize();
+  createNodes();
+  clearEmptyState();
+  countdownText.textContent = `Loaded ${excelNames.length} names from ${sourceLabel}`;
+  spinButton.disabled = false;
+  return true;
+}
+
+async function tryFetchArrayBuffer(path) {
+  const response = await fetch(path, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.arrayBuffer();
+}
+
+function tryXhrArrayBuffer(path) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", path, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 0) {
+        resolve(xhr.response);
+        return;
+      }
+      reject(new Error(`XHR ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error("XHR network error"));
+    xhr.send();
+  });
+}
+
+async function loadNamesFromFolder() {
+  if (typeof XLSX === "undefined") {
+    countdownText.textContent = "Excel parser failed to load";
+    createGhostNodes();
+    createEmptyState("XLSX library failed to load.");
+    return;
+  }
+
+  const candidates = ["names.xls", "names.xlsx", "Names.xls", "Names.xlsx"];
+
+  for (const candidate of candidates) {
+    try {
+      let arrayBuffer;
+      try {
+        arrayBuffer = await tryFetchArrayBuffer(candidate);
+      } catch (fetchError) {
+        if (window.location.protocol === "file:") {
+          arrayBuffer = await tryXhrArrayBuffer(candidate);
+        } else {
+          throw fetchError;
+        }
+      }
+
+      if (applyWorkbook(arrayBuffer, candidate)) {
+        return;
+      }
+    } catch (error) {
+      // Try next candidate.
+    }
+  }
+
+  if (window.location.protocol === "file:") {
+    countdownText.textContent = "File access blocked. Click 'Choose names.xls'.";
+    createGhostNodes();
+    createEmptyState("Browser blocked file access. Use 'Choose names.xls'.");
+    return;
+  }
+
+  countdownText.textContent = "No valid names.xls found";
+  createGhostNodes();
+  createEmptyState("Could not find names.xls / names.xlsx in this folder.");
+}
+
+async function loadNamesFromPicker(file) {
+  if (!file) {
+    return;
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    applyWorkbook(arrayBuffer, file.name);
+  } catch (error) {
+    countdownText.textContent = "Could not read selected file";
+    createGhostNodes();
+    createEmptyState("Selected file could not be read.");
+  }
+}
+
+spinButton.addEventListener("click", runSelection);
+chooseFileButton.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", (event) => {
+  const [file] = event.target.files;
+  loadNamesFromPicker(file);
+  fileInput.value = "";
+});
+
+window.addEventListener("resize", () => {
+  refreshStageSize();
+  if (names.length > 0) {
+    createNodes();
+  } else {
+    createGhostNodes();
+    createEmptyState("Click 'Choose names.xls' to load your names file.");
+  }
+});
+
+refreshStageSize();
+createGhostNodes();
+createEmptyState("Click 'Choose names.xls' to load your names file.");
+countdownText.textContent = "Choose names.xls to begin";
+requestAnimationFrame(animationLoop);
+
