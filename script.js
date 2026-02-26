@@ -181,10 +181,6 @@ function animationLoop(now) {
   lastFrame = now;
 
   if (nodes.length > 0) {
-    if (node.isWinner) {
-      return;
-    }
-
     if (mode === "juggle") {
       updateBouncePositions(dt, juggleSpeed);
     } else {
